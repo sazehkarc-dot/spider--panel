@@ -1,0 +1,27 @@
+services:
+  spider:
+    build:
+      context: .
+      dockerfile: Dockerfile.base44
+    container_name: spider-panel
+    ports:
+      - "3000:8080"
+    volumes:
+      - .:/app
+      - spider_data:/data
+    environment:
+      - DATA_DIR=/data
+      - ADMIN_PASSWORD=admin
+      - SECRET_KEY=spider-panel-secret-key-v2
+      - BASE44_PREVIEW_MODE
+      - RAILWAY_PUBLIC_DOMAIN=${RAILWAY_PUBLIC_DOMAIN:-localhost}
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  spider_data:

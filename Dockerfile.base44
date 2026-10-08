@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies from the lockfile (requirements.txt) so the image has
+# them baked in. Source is bind-mounted at runtime for live reload.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# The repo is bind-mounted here at runtime; just ensure the data dir exists.
+RUN mkdir -p /data
+
+EXPOSE 8080
+
+CMD ["python", "main.py"]
