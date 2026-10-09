@@ -1,27 +1,48 @@
 services:
-  spider:
+  db:
+    image: postgres:16-alpine
+    container_name: beesa-db
+    environment:
+      POSTGRES_DB: beesa
+      POSTGRES_USER: beesa
+      POSTGRES_PASSWORD: beesa_dev_password
+    volumes:
+      - beesa_pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beesa"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+
+  web:
     build:
       context: .
       dockerfile: Dockerfile.base44
-    container_name: spider-panel
-    ports:
-      - "3000:8080"
+    container_name: beesa-web
+    command: sh -ec "npm install && (node server/index.js &) && exec npx vite --host 0.0.0.0 --port 3000"
     volumes:
       - .:/app
-      - spider_data:/data
+    ports:
+      - "3000:3000"
     environment:
-      - DATA_DIR=/data
-      - ADMIN_PASSWORD=admin
-      - SECRET_KEY=spider-panel-secret-key-v2
+      - DATABASE_URL=postgresql://beesa:beesa_dev_password@db:5432/beesa
+      - JWT_SECRET=beesa_jwt_secret_dev
+      - PORT=4000
+      - VITE_API_PROXY_TARGET=http://localhost:4000
       - BASE44_PREVIEW_MODE
-      - RAILWAY_PUBLIC_DOMAIN=${RAILWAY_PUBLIC_DOMAIN:-localhost}
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    depends_on:
+      db:
+        condition: service_healthy
     restart: on-failure
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/', timeout=5)"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/',r=>process.exit(r.statusCode<400?0:1))"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
 volumes:
-  spider_data:
+  beesa_pgdata:

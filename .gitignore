@@ -1,10 +1,12 @@
 __pycache__/
 *.pyc
-xray/xray
-xray/config.json
-xray/xray.zip
-# Whole data dir is ignored: it holds live credentials, worker tokens, and
-# runtime PKI keys. Nothing under data/ may ever be committed.
+xray/
 data/
 .venv/
 .claude/
+node_modules/
+dist/
+public/uploads/*
+!public/uploads/.gitkeep
+*.local
+.env
